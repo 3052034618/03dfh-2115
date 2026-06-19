@@ -1,0 +1,250 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-xl $page-padding;
+  padding-bottom: 120rpx;
+}
+
+.tabContainer {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: $spacing-xs;
+  margin-bottom: $spacing-xl;
+}
+
+.tabItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: $gradient-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.formCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  border: 1rpx solid $color-border;
+  margin-bottom: $spacing-xl;
+}
+
+.formTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  text-align: center;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.formInput {
+  width: 100%;
+  height: $button-height-lg;
+  padding: 0 $spacing-lg;
+  background: $color-bg-card-light;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-lg;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: $color-text-tertiary;
+  }
+
+  &:focus {
+    border-color: $color-primary;
+  }
+}
+
+.roleCountContainer {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.roleCountBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  background: $color-bg-card-light;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-lg;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &.active {
+    background: $gradient-primary;
+    border-color: $color-primary;
+    color: $color-text-white;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.submitBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  background: $gradient-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-md;
+  transition: all $transition-base;
+
+  &:disabled {
+    opacity: 0.5;
+    background: $color-bg-card-light;
+    color: $color-text-tertiary;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.roomList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.roomCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-lg;
+  border: 1rpx solid $color-border;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.roomHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.roomScript {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.roomCode {
+  background: $gradient-primary;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  letter-spacing: 2rpx;
+}
+
+.roomMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.roomPlayers {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.playerAvatars {
+  display: flex;
+  margin-left: $spacing-sm;
+}
+
+.miniAvatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  border: 2rpx solid $color-bg-page;
+  margin-left: -16rpx;
+
+  &:first-child {
+    margin-left: 0;
+  }
+}
+
+.roomStatus {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.waiting {
+    background: rgba(251, 191, 36, 0.15);
+    color: $color-warning;
+  }
+
+  &.matched {
+    background: rgba(52, 211, 153, 0.15);
+    color: $color-success;
+  }
+
+  &.playing {
+    background: rgba(96, 165, 250, 0.15);
+    color: $color-info;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xxl $page-padding;
+}
+
+.emptyIcon {
+  font-size: 100rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.emptyDesc {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+}

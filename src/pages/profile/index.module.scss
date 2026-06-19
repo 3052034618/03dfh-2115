@@ -1,0 +1,278 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 120rpx;
+}
+
+.headerSection {
+  padding: $spacing-xxl $page-padding;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.3) 0%, transparent 100%);
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-xl;
+}
+
+.avatar {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: $radius-round;
+  border: 4rpx solid $color-primary;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  display: block;
+  font-size: 40rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.userId {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.profileCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  border: 1rpx solid $color-border;
+}
+
+.typeSection {
+  text-align: center;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  border-bottom: 1rpx solid $color-border;
+}
+
+.typeIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-sm;
+}
+
+.typeName {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.typeDesc {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+}
+
+.traitsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  justify-content: center;
+  margin-top: $spacing-md;
+}
+
+.traitTag {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.scoresSection {
+  margin-top: $spacing-lg;
+}
+
+.scoresTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.scoreItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.scoreIcon {
+  font-size: 32rpx;
+  width: 48rpx;
+  text-align: center;
+}
+
+.scoreName {
+  width: 120rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.scoreBarContainer {
+  flex: 1;
+  height: 12rpx;
+  background: $color-bg-card-light;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.scoreBar {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-slow ease;
+}
+
+.scoreValue {
+  width: 60rpx;
+  text-align: right;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+}
+
+.prefsSection {
+  padding: $spacing-xl $page-padding;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+.prefCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-lg;
+  border: 1rpx solid $color-border;
+  margin-bottom: $spacing-md;
+}
+
+.prefRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+
+  &:not(:last-child) {
+    border-bottom: 1rpx solid $color-border;
+  }
+}
+
+.prefLabel {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.prefValue {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.switch {
+  width: 88rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  background: $color-bg-card-light;
+  position: relative;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-primary;
+  }
+}
+
+.switchKnob {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: $color-text-white;
+  border-radius: $radius-round;
+  transition: all $transition-base;
+
+  .active & {
+    left: 44rpx;
+  }
+}
+
+.menuSection {
+  padding: 0 $page-padding;
+  margin-top: $spacing-xl;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg;
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  border: 1rpx solid $color-border;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.menuIcon {
+  font-size: 36rpx;
+  width: 48rpx;
+  text-align: center;
+  margin-right: $spacing-md;
+}
+
+.menuText {
+  flex: 1;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.menuArrow {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+}
+
+.emptyProfile {
+  text-align: center;
+  padding: $spacing-xxl 0;
+}
+
+.emptyIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-lg;
+}
+
+.emptyBtn {
+  @include button-reset;
+  padding: $spacing-md $spacing-xl;
+  background: $gradient-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  display: inline-block;
+}

@@ -1,0 +1,95 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  width: 100%;
+}
+
+.questionCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-xl;
+  border: 1rpx solid $color-border;
+  box-shadow: 0 8rpx 32rpx rgba(99, 102, 241, 0.15);
+}
+
+.questionNumber {
+  display: inline-block;
+  background: $gradient-primary;
+  color: $color-text-white;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-md;
+}
+
+.questionText {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  line-height: $line-height-loose;
+}
+
+.optionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.optionBtn {
+  @include button-reset;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-bg-card;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-lg;
+  text-align: left;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  &.selected {
+    border-color: $color-primary;
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%);
+    box-shadow: 0 0 0 4rpx rgba(99, 102, 241, 0.2);
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+.optionLetter {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-bg-card-light;
+  color: $color-text-secondary;
+  border-radius: $radius-round;
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+
+  .selected & {
+    background: $color-primary;
+    color: $color-text-white;
+  }
+}
+
+.optionText {
+  flex: 1;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  line-height: $line-height-normal;
+  padding-top: $spacing-xs;
+}

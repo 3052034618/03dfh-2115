@@ -1,0 +1,41 @@
+// ============================================
+// 主题配色变量
+// ============================================
+
+// 品牌主题色：靛蓝紫 - 神秘探索风
+$color-primary: #6366F1;
+$color-primary-light: #818CF8;
+$color-primary-dark: #4F46E5;
+
+// 玩家类型专属色
+$color-type-detective: #60A5FA;
+$color-type-emotional: #F472B6;
+$color-type-observer: #34D399;
+$color-type-icebreaker: #FBBF24;
+
+// 功能色
+$color-success: #34D399;
+$color-warning: #FBBF24;
+$color-error: #F87171;
+$color-info: #60A5FA;
+
+// 背景色（深色主题）
+$color-bg-page: #0F172A;
+$color-bg-card: #1E293B;
+$color-bg-card-light: #334155;
+$color-bg-hover: #475569;
+
+// 文本色
+$color-text-primary: #F1F5F9;
+$color-text-secondary: #94A3B8;
+$color-text-tertiary: #64748B;
+$color-text-disabled: #475569;
+$color-text-white: #FFFFFF;
+
+// 边框色
+$color-border: #334155;
+$color-divider: #1E293B;
+
+// 渐变
+$gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+$gradient-card: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);

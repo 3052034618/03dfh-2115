@@ -1,0 +1,50 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.text {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.percentage {
+  font-size: $font-size-sm;
+  color: $color-primary-light;
+  font-weight: $font-weight-semibold;
+}
+
+.barContainer {
+  width: 100%;
+  height: 16rpx;
+  background: $color-bg-card-light;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-slow ease;
+}
+
+.primary {
+  background: $gradient-primary;
+}
+
+.success {
+  background: linear-gradient(90deg, $color-success 0%, #10B981 100%);
+}
+
+.warning {
+  background: linear-gradient(90deg, $color-warning 0%, #F59E0B 100%);
+}

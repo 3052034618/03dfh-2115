@@ -1,0 +1,270 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-xl $page-padding;
+  padding-bottom: 120rpx;
+}
+
+.resultHeader {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+  padding: $spacing-xl 0;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
+  border-radius: $radius-xl;
+}
+
+.typeIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-md;
+  display: block;
+}
+
+.typeName {
+  font-size: 44rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.typeSubtitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+  max-width: 600rpx;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: $spacing-xl;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.sectionIcon {
+  font-size: $font-size-xl;
+}
+
+.traitsCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  border: 1rpx solid $color-border;
+}
+
+.traitsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  justify-content: center;
+}
+
+.traitTag {
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.scoresCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  border: 1rpx solid $color-border;
+}
+
+.scoreItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.scoreIcon {
+  font-size: 40rpx;
+  width: 56rpx;
+  text-align: center;
+}
+
+.scoreInfo {
+  flex: 1;
+}
+
+.scoreNameRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.scoreName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.scoreValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+}
+
+.scoreBarContainer {
+  height: 16rpx;
+  background: $color-bg-card-light;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.scoreBar {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-slow ease;
+}
+
+.suggestionsCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  border: 1rpx solid $color-border;
+}
+
+.suggestionItem {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-lg 0;
+
+  &:not(:last-child) {
+    border-bottom: 1rpx solid $color-border;
+  }
+}
+
+.suggestionIcon {
+  font-size: 36rpx;
+  flex-shrink: 0;
+  width: 48rpx;
+  text-align: center;
+}
+
+.suggestionContent {
+  flex: 1;
+}
+
+.suggestionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.suggestionDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-loose;
+}
+
+.prefsCard {
+  background: $gradient-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  border: 1rpx solid $color-border;
+}
+
+.prefRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+
+  &:not(:last-child) {
+    border-bottom: 1rpx solid $color-border;
+  }
+}
+
+.prefLabel {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.prefValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+}
+
+.prefYes {
+  background: rgba(52, 211, 153, 0.15);
+  color: $color-success;
+}
+
+.prefNo {
+  background: rgba(248, 113, 113, 0.15);
+  color: $color-error;
+}
+
+.prefSpeed {
+  background: rgba(96, 165, 250, 0.15);
+  color: $color-info;
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xxl;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  &.primary {
+    background: $gradient-primary;
+    color: $color-text-white;
+  }
+
+  &.secondary {
+    background: $color-bg-card-light;
+    color: $color-text-secondary;
+    border: 1rpx solid $color-border;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xxl 0;
+}
+
+.emptyIcon {
+  font-size: 100rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xl;
+}
