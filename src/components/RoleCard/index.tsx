@@ -11,6 +11,7 @@ interface RoleCardProps {
   reason: string;
   score: number;
   showSwap?: boolean;
+  swapDisabled?: boolean;
   onSwap?: () => void;
   className?: string;
 }
@@ -21,6 +22,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
   reason,
   score,
   showSwap = false,
+  swapDisabled = false,
   onSwap,
   className
 }) => {
@@ -68,10 +70,13 @@ const RoleCard: React.FC<RoleCardProps> = ({
       {showSwap && onSwap && (
         <View className={styles.swapContainer}>
           <Text
-            className={styles.swapBtn}
-            onClick={onSwap}
+            className={classnames(
+              styles.swapBtn,
+              swapDisabled && styles.swapBtnDisabled
+            )}
+            onClick={!swapDisabled ? onSwap : undefined}
           >
-            🔄 发起换角
+            {swapDisabled ? '⏳ 处理中' : '🔄 发起换角'}
           </Text>
         </View>
       )}

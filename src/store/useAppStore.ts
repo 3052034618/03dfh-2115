@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { Player, Room, PlayerProfile, SwapRequest } from '@/types';
+import Taro from '@tarojs/taro';
+import { Player, Room, PlayerProfile, SwapRequest, SwapImpact } from '@/types';
 
 interface AppState {
   currentUser: Player | null;
@@ -15,8 +16,9 @@ interface AppState {
   removePlayerFromRoom: (playerId: string) => void;
   updateRoomStatus: (status: Room['status']) => void;
   setAssignedRoles: (roles: Record<string, string>) => void;
-  requestSwap: (toPlayerId: string, fromRole: string, toRole: string, impact: any) => void;
+  requestSwap: (toPlayerId: string, fromRole: string, toRole: string, impact: SwapImpact) => SwapRequest | null;
   respondToSwap: (requestId: string, accepted: boolean) => void;
+  hasPendingSwapBetween: (fromPlayerId: string, toPlayerId: string) => boolean;
 }
 
 const mockUsers: Player[] = [
@@ -63,10 +65,43 @@ export const useAppStore = create<AppState>((set, get) => ({
   updateUserProfile: (profile: PlayerProfile) => {
     set((state) => {
       if (!state.currentUser) return {};
+      const userId = state.currentUser.id;
       const updatedUser = { ...state.currentUser, profile };
-      console.log('[Profile] 用户画像已更新:', profile.name);
-      return { currentUser: updatedUser };
+
+      const updatedRooms = state.rooms.map(room => {
+        const hasPlayer = room.players.some(p => p.id === userId);
+        if (!hasPlayer) return room;
+
+        const updatedPlayers = room.players.map(p =>
+          p.id === userId ? { ...p, profile } : p
+        );
+
+        return { ...room, players: updatedPlayers };
+      });
+
+      const updatedCurrentRoom = state.currentRoom
+        ? updatedRooms.find(r => r.id === state.currentRoom!.id) || null
+        : null;
+
+      console.log('[Profile] 用户画像已更新并同步至房间:', profile.name);
+      return {
+        currentUser: updatedUser,
+        rooms: updatedRooms,
+        currentRoom: updatedCurrentRoom
+      };
     });
+  },
+
+  hasPendingSwapBetween: (fromPlayerId: string, toPlayerId: string): boolean => {
+    const state = get();
+    if (!state.currentRoom) return false;
+    return state.currentRoom.swapRequests.some(req =>
+      req.status === 'pending' &&
+      (
+        (req.fromPlayerId === fromPlayerId && req.toPlayerId === toPlayerId) ||
+        (req.fromPlayerId === toPlayerId && req.toPlayerId === fromPlayerId)
+      )
+    );
   },
 
   createRoom: (scriptName: string, roleCount: number): Room => {
@@ -212,18 +247,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     console.log('[Room] 角色已分配:', roles);
   },
 
-  requestSwap: (toPlayerId: string, fromRole: string, toRole: string, impact: any) => {
+  requestSwap: (toPlayerId: string, fromRole: string, toRole: string, impact: SwapImpact): SwapRequest | null => {
     const state = get();
-    if (!state.currentRoom || !state.currentUser) return;
+    if (!state.currentRoom || !state.currentUser) return null;
+
+    const fromPlayerId = state.currentUser.id;
+
+    if (state.hasPendingSwapBetween(fromPlayerId, toPlayerId)) {
+      console.log('[Swap] 双方之间已有待处理请求，拒绝重复发送');
+      Taro.showToast({ title: '已有待处理的换角请求', icon: 'none' });
+      return null;
+    }
 
     const request: SwapRequest = {
       id: `swap_${Date.now()}`,
-      fromPlayerId: state.currentUser.id,
+      fromPlayerId,
       toPlayerId,
       fromRole,
       toRole,
       impact,
-      status: 'pending'
+      status: 'pending',
+      createdAt: Date.now()
     };
 
     const updatedRoom = {
@@ -237,6 +281,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
 
     console.log('[Swap] 换角请求已发送:', request.id);
+    return request;
   },
 
   respondToSwap: (requestId: string, accepted: boolean) => {

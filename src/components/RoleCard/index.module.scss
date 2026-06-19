@@ -103,4 +103,17 @@
     opacity: 0.8;
     transform: scale(0.98);
   }
+
+  &.swapBtnDisabled {
+    background: $color-bg-card-light;
+    border-color: $color-border;
+    color: $color-text-secondary;
+    opacity: 0.7;
+    cursor: not-allowed;
+
+    &:active {
+      transform: none;
+      opacity: 0.7;
+    }
+  }
 }

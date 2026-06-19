@@ -53,18 +53,24 @@ export interface Room {
   createdAt: number;
 }
 
+export interface SwapImpact {
+  fromPlayer: string;
+  toPlayer: string;
+  overall: string;
+  fromDiff: number;
+  toDiff: number;
+  overallDiff: number;
+}
+
 export interface SwapRequest {
   id: string;
   fromPlayerId: string;
   toPlayerId: string;
   fromRole: string;
   toRole: string;
-  impact: {
-    fromPlayer: string;
-    toPlayer: string;
-    overall: string;
-  };
+  impact: SwapImpact;
   status: 'pending' | 'accepted' | 'rejected';
+  createdAt: number;
 }
 
 export interface RoleSuggestion {

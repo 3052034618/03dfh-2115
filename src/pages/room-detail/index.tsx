@@ -1,20 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Image, Button, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import { useAppStore } from '@/store/useAppStore';
 import { assignRoles, calculateSwapImpact } from '@/utils/roleAssigner';
-import { Player, MatchResult } from '@/types';
+import { Player, MatchResult, SwapRequest, SwapImpact } from '@/types';
 import PlayerCard from '@/components/PlayerCard';
 import RoleCard from '@/components/RoleCard';
 import styles from './index.module.scss';
 
 const RoomDetailPage: React.FC = () => {
-  const { currentRoom, currentUser, leaveRoom, updateRoomStatus, setAssignedRoles, requestSwap, addPlayerToRoom } = useAppStore();
+  const {
+    currentRoom,
+    currentUser,
+    leaveRoom,
+    updateRoomStatus,
+    setAssignedRoles,
+    requestSwap,
+    respondToSwap,
+    addPlayerToRoom,
+    hasPendingSwapBetween
+  } = useAppStore();
+
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [swapTarget, setSwapTarget] = useState<Player | null>(null);
-  const [swapImpact, setSwapImpact] = useState<any>(null);
+  const [swapImpact, setSwapImpact] = useState<SwapImpact | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!currentRoom) {
@@ -41,14 +53,31 @@ const RoomDetailPage: React.FC = () => {
         }
       });
     }
-  }, [currentRoom?.id]);
+  }, [currentRoom?.id, addPlayerToRoom, currentRoom?.players.length, currentRoom?.roleCount, currentRoom]);
 
   useEffect(() => {
     if (currentRoom?.status === 'matched' && currentRoom.assignedRoles) {
-      const result = assignRoles(currentRoom.players, currentRoom.roleCount);
+      const playersWithLatestRoles = currentRoom.players;
+      const result = assignRoles(playersWithLatestRoles, currentRoom.roleCount);
+      result.suggestions = result.suggestions.map(sug => {
+        const player = currentRoom.players.find(p => p.id === sug.playerId);
+        if (player?.role) {
+          return { ...sug, role: player.role };
+        }
+        return sug;
+      });
       setMatchResult(result);
     }
-  }, [currentRoom?.status, currentRoom?.assignedRoles]);
+  }, [currentRoom?.status, currentRoom?.assignedRoles, currentRoom?.players, currentRoom]);
+
+  const pendingSwaps = useMemo(() => {
+    if (!currentRoom || !currentUser) return { sent: [], received: [] as SwapRequest[] };
+    const allPending = currentRoom.swapRequests.filter(r => r.status === 'pending');
+    return {
+      sent: allPending.filter(r => r.fromPlayerId === currentUser.id),
+      received: allPending.filter(r => r.toPlayerId === currentUser.id)
+    };
+  }, [currentRoom, currentUser]);
 
   if (!currentRoom || !currentUser) {
     return <View className={styles.page} />;
@@ -65,7 +94,7 @@ const RoomDetailPage: React.FC = () => {
 
   const handleStartMatching = () => {
     const untestedPlayers = currentRoom.players.filter(p => !p.profile);
-    
+
     if (untestedPlayers.length > 0) {
       Taro.showModal({
         title: '提示',
@@ -85,19 +114,19 @@ const RoomDetailPage: React.FC = () => {
 
   const doMatch = () => {
     updateRoomStatus('matching');
-    
+
     setTimeout(() => {
       const result = assignRoles(currentRoom.players, currentRoom.roleCount);
       setMatchResult(result);
-      
+
       const rolesMap: Record<string, string> = {};
       result.suggestions.forEach(s => {
         rolesMap[s.playerId] = s.role;
       });
       setAssignedRoles(rolesMap);
-      
+
       console.log('[Room] 角色匹配完成:', result);
-      
+
       Taro.showToast({
         title: '匹配完成！',
         icon: 'success'
@@ -120,42 +149,88 @@ const RoomDetailPage: React.FC = () => {
 
   const handleInitiateSwap = (targetPlayer: Player) => {
     if (!currentUser.role || !targetPlayer.role) return;
-    
-    const impact = calculateSwapImpact(
-      currentUser,
-      targetPlayer,
-      currentUser.role,
-      targetPlayer.role
-    );
-    
-    setSwapTarget(targetPlayer);
-    setSwapImpact(impact);
-    setShowSwapModal(true);
+    if (hasPendingSwapBetween(currentUser.id, targetPlayer.id)) {
+      Taro.showToast({ title: '与该玩家已有待处理请求', icon: 'none' });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const impact = calculateSwapImpact(
+        currentUser,
+        targetPlayer,
+        currentUser.role,
+        targetPlayer.role
+      );
+
+      setSwapTarget(targetPlayer);
+      setSwapImpact(impact);
+      setShowSwapModal(true);
+    } catch (err) {
+      console.error('[Swap] 计算换角影响失败:', err);
+      Taro.showToast({ title: '计算失败，请重试', icon: 'none' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfirmSwap = () => {
-    if (!swapTarget || !currentUser.role || !swapTarget.role) return;
-    
-    requestSwap(
+    if (!swapTarget || !currentUser.role || !swapTarget.role || !swapImpact) return;
+
+    const result = requestSwap(
       swapTarget.id,
       currentUser.role,
       swapTarget.role,
       swapImpact
     );
-    
-    setShowSwapModal(false);
-    setSwapTarget(null);
-    setSwapImpact(null);
-    
-    Taro.showToast({
-      title: '换角请求已发送',
-      icon: 'success'
+
+    if (result) {
+      setShowSwapModal(false);
+      setSwapTarget(null);
+      setSwapImpact(null);
+      Taro.showToast({
+        title: '换角请求已发送，等待对方回应~',
+        icon: 'success',
+        duration: 2000
+      });
+    }
+  };
+
+  const handleRespondSwap = (requestId: string, accepted: boolean) => {
+    const req = currentRoom.swapRequests.find(r => r.id === requestId);
+    if (!req) return;
+
+    Taro.showModal({
+      title: accepted ? '确认接受换角？' : '确认拒绝换角？',
+      content: accepted
+        ? `你将与 ${currentRoom.players.find(p => p.id === req.fromPlayerId)?.name || '对方'} 交换角色`
+        : '拒绝后无法恢复，确定吗？',
+      success: (res) => {
+        if (res.confirm) {
+          respondToSwap(requestId, accepted);
+          Taro.showToast({
+            title: accepted ? '已接受换角！角色已更新' : '已拒绝换角请求',
+            icon: 'success'
+          });
+        }
+      }
     });
+  };
+
+  const getPlayerById = (id: string): Player | undefined => {
+    return currentRoom.players.find(p => p.id === id);
+  };
+
+  const getTrendClass = (diff: number): string => {
+    if (diff > 1) return styles.impactGood;
+    if (diff < -1) return styles.impactBad;
+    return styles.impactNeutral;
   };
 
   const isHost = currentRoom.players.find(p => p.id === currentUser.id)?.isHost || false;
   const canMatch = isHost && currentRoom.status === 'waiting' && currentRoom.players.length >= 2;
-  const allMatched = currentRoom.status === 'matched';
+  const allMatched = currentRoom.status === 'matched' || currentRoom.status === 'playing';
 
   return (
     <>
@@ -176,21 +251,75 @@ const RoomDetailPage: React.FC = () => {
               </View>
               <View className={styles.metaItem}>
                 <Text className={styles.metaValue}>
-                  {currentRoom.status === 'waiting' ? '⏳' : currentRoom.status === 'matching' ? '🎲' : '✅'}
+                  {currentRoom.status === 'waiting' ? '⏳' : currentRoom.status === 'matching' ? '🎲' : currentRoom.status === 'matched' ? '✅' : '🎮'}
                 </Text>
                 <Text className={styles.metaLabel}>
-                  {currentRoom.status === 'waiting' ? '等待中' : currentRoom.status === 'matching' ? '匹配中' : '已匹配'}
+                  {currentRoom.status === 'waiting' ? '等待中' : currentRoom.status === 'matching' ? '匹配中' : currentRoom.status === 'matched' ? '已匹配' : '游戏中'}
                 </Text>
               </View>
             </View>
           </View>
         </View>
 
+        {pendingSwaps.sent.length > 0 && allMatched && (
+          <View className={styles.swapNoticeSection}>
+            <Text className={styles.noticeTitle}>📤 我发出的换角请求</Text>
+            {pendingSwaps.sent.map(req => {
+              const target = getPlayerById(req.toPlayerId);
+              return (
+                <View key={req.id} className={styles.swapNoticeCard}>
+                  <Text className={styles.swapNoticeText}>
+                    请求与 {target?.name || '对方'} 交换：{req.fromRole} ⇄ {req.toRole}
+                  </Text>
+                  <View className={styles.pendingBadge}>⏳ 等待对方处理</View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {pendingSwaps.received.length > 0 && allMatched && (
+          <View className={styles.swapNoticeSection}>
+            <Text className={styles.noticeTitle}>📥 发给我的换角请求（需要你处理）</Text>
+            {pendingSwaps.received.map(req => {
+              const requester = getPlayerById(req.fromPlayerId);
+              return (
+                <View key={req.id} className={styles.swapNoticeCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text className={styles.swapNoticeText}>
+                      {requester?.name || '有人'} 想与你交换：{req.toRole} ⇄ {req.fromRole}
+                    </Text>
+                    <View className={styles.impactMini}>
+                      <Text className={classnames(styles.impactMiniText, getTrendClass(req.impact.toDiff))}>
+                        你：{req.impact.toDiff >= 0 ? '+' : ''}{req.impact.toDiff.toFixed(1)}分
+                      </Text>
+                    </View>
+                  </View>
+                  <View className={styles.swapResponseBtns}>
+                    <Button
+                      className={classnames(styles.responseBtn, styles.rejectBtn)}
+                      onClick={() => handleRespondSwap(req.id, false)}
+                    >
+                      拒绝
+                    </Button>
+                    <Button
+                      className={classnames(styles.responseBtn, styles.acceptBtn)}
+                      onClick={() => handleRespondSwap(req.id, true)}
+                    >
+                      接受
+                    </Button>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         <View className={styles.section}>
           <Text className={styles.sectionTitle}>
             👥 玩家列表 ({currentRoom.players.length}/{currentRoom.roleCount})
           </Text>
-          
+
           {!allMatched && currentRoom.players.some(p => !p.profile) && (
             <View className={styles.unmatchedTip}>
               <Text className={styles.unmatchedTipText}>
@@ -200,16 +329,22 @@ const RoomDetailPage: React.FC = () => {
           )}
 
           <View className={styles.playerList}>
-            {currentRoom.players.map((player) => (
-              <PlayerCard
-                key={player.id}
-                player={player}
-                showRole={allMatched}
-                showPrefs={true}
-                isSwapTarget={allMatched && showSwapModal && swapTarget?.id === player.id}
-                onClick={() => allMatched && player.id !== currentUser.id && handleInitiateSwap(player)}
-              />
-            ))}
+            {currentRoom.players.map((player) => {
+              const hasPending = currentUser
+                ? hasPendingSwapBetween(currentUser.id, player.id)
+                : false;
+              return (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  showRole={allMatched}
+                  showPrefs={true}
+                  isSwapTarget={allMatched && showSwapModal && swapTarget?.id === player.id}
+                  hasPendingSwap={hasPending && player.id !== currentUser.id}
+                  onClick={() => allMatched && player.id !== currentUser.id && handleInitiateSwap(player)}
+                />
+              );
+            })}
           </View>
         </View>
 
@@ -218,26 +353,55 @@ const RoomDetailPage: React.FC = () => {
             <View className={styles.matchResultCard}>
               <Text className={styles.matchResultTitle}>🎯 分角结果</Text>
               <Text className={styles.matchResultDesc}>{matchResult.overallReason}</Text>
-              
+
               <View className={styles.roleAssignments}>
                 {matchResult.suggestions.map((suggestion) => {
                   const player = currentRoom.players.find(p => p.id === suggestion.playerId);
                   if (!player) return null;
-                  
+                  const hasPending = currentUser
+                    ? hasPendingSwapBetween(currentUser.id, player.id)
+                    : false;
+                  const effectiveRole = player.role || suggestion.role;
+
                   return (
                     <RoleCard
                       key={suggestion.playerId}
                       player={player}
-                      role={suggestion.role}
+                      role={effectiveRole}
                       reason={suggestion.reason}
                       score={suggestion.score}
-                      showSwap={player.id !== currentUser.id}
+                      showSwap={allMatched && player.id !== currentUser.id && currentRoom.status === 'matched'}
+                      swapDisabled={hasPending}
                       onSwap={() => handleInitiateSwap(player)}
                     />
                   );
                 })}
               </View>
             </View>
+          </View>
+        )}
+
+        {allMatched && currentRoom.swapRequests.filter(r => r.status !== 'pending').length > 0 && (
+          <View className={styles.section}>
+            <Text className={styles.sectionTitle}>🔄 换角记录</Text>
+            {currentRoom.swapRequests
+              .filter(r => r.status !== 'pending')
+              .map(req => {
+                const from = getPlayerById(req.fromPlayerId);
+                const to = getPlayerById(req.toPlayerId);
+                return (
+                  <View key={req.id} className={styles.swapHistoryCard}>
+                    <Text>
+                      {from?.name} ⇄ {to?.name}：{req.fromRole} ⇄ {req.toRole}
+                    </Text>
+                    <Text className={classnames(
+                      req.status === 'accepted' ? styles.historyAccept : styles.historyReject
+                    )}>
+                      {req.status === 'accepted' ? '✅ 已完成' : '❌ 已拒绝'}
+                    </Text>
+                  </View>
+                );
+              })}
           </View>
         )}
       </ScrollView>
@@ -257,16 +421,34 @@ const RoomDetailPage: React.FC = () => {
             开始匹配 🎲
           </Button>
         )}
-        {allMatched && (
+        {allMatched && currentRoom.status === 'matched' && isHost && (
           <Button
             className={classnames(styles.actionBtn, styles.success)}
             onClick={() => {
-              updateRoomStatus('playing');
-              Taro.showToast({ title: '游戏开始！祝大家玩得开心~', icon: 'success' });
+              if (pendingSwaps.sent.length > 0 || pendingSwaps.received.length > 0) {
+                Taro.showModal({
+                  title: '有待处理的换角请求',
+                  content: '还有换角请求未处理，确定要开始游戏吗？',
+                  success: (res) => {
+                    if (res.confirm) {
+                      updateRoomStatus('playing');
+                      Taro.showToast({ title: '游戏开始！祝大家玩得开心~', icon: 'success' });
+                    }
+                  }
+                });
+              } else {
+                updateRoomStatus('playing');
+                Taro.showToast({ title: '游戏开始！祝大家玩得开心~', icon: 'success' });
+              }
             }}
           >
             开始游戏 🎮
           </Button>
+        )}
+        {currentRoom.status === 'playing' && (
+          <View className={classnames(styles.actionBtn, styles.playingHint)}>
+            🎭 游戏进行中...
+          </View>
         )}
       </View>
 
@@ -274,18 +456,24 @@ const RoomDetailPage: React.FC = () => {
         <View className={styles.swapModal} onClick={() => setShowSwapModal(false)}>
           <View className={styles.swapModalContent} onClick={e => e.stopPropagation()}>
             <Text className={styles.swapModalTitle}>🔄 发起换角</Text>
-            
+
             <View className={styles.swapPlayers}>
               <View className={styles.swapPlayer}>
                 <Image className={styles.swapAvatar} src={currentUser.avatar} mode="aspectFill" />
                 <Text className={styles.swapRole}>{currentUser.role}</Text>
-                <Text className={styles.swapName}>{currentUser.name}</Text>
+                <Text className={styles.swapName}>{currentUser.name}（你）</Text>
+                <View className={classnames(styles.swapDiffBadge, getTrendClass(swapImpact.fromDiff))}>
+                  {swapImpact.fromDiff >= 0 ? '+' : ''}{swapImpact.fromDiff.toFixed(1)}
+                </View>
               </View>
               <Text className={styles.swapArrow}>⇄</Text>
               <View className={styles.swapPlayer}>
                 <Image className={styles.swapAvatar} src={swapTarget.avatar} mode="aspectFill" />
                 <Text className={styles.swapRole}>{swapTarget.role}</Text>
                 <Text className={styles.swapName}>{swapTarget.name}</Text>
+                <View className={classnames(styles.swapDiffBadge, getTrendClass(swapImpact.toDiff))}>
+                  {swapImpact.toDiff >= 0 ? '+' : ''}{swapImpact.toDiff.toFixed(1)}
+                </View>
               </View>
             </View>
 
@@ -294,8 +482,7 @@ const RoomDetailPage: React.FC = () => {
                 <Text className={styles.impactLabel}>对你的影响：</Text>
                 <Text className={classnames(
                   styles.impactText,
-                  swapImpact.fromPlayer.includes('更') && styles.impactGood,
-                  swapImpact.fromPlayer.includes('下降') && styles.impactBad
+                  getTrendClass(swapImpact.fromDiff)
                 )}>
                   {swapImpact.fromPlayer}
                 </Text>
@@ -304,8 +491,7 @@ const RoomDetailPage: React.FC = () => {
                 <Text className={styles.impactLabel}>对对方的影响：</Text>
                 <Text className={classnames(
                   styles.impactText,
-                  swapImpact.toPlayer.includes('更') && styles.impactGood,
-                  swapImpact.toPlayer.includes('别扭') && styles.impactBad
+                  getTrendClass(swapImpact.toDiff)
                 )}>
                   {swapImpact.toPlayer}
                 </Text>
@@ -314,8 +500,7 @@ const RoomDetailPage: React.FC = () => {
                 <Text className={styles.impactLabel}>整体影响：</Text>
                 <Text className={classnames(
                   styles.impactText,
-                  swapImpact.overall.includes('双赢') && styles.impactGood,
-                  swapImpact.overall.includes('血亏') && styles.impactBad
+                  getTrendClass(swapImpact.overallDiff)
                 )}>
                   {swapImpact.overall}
                 </Text>
@@ -332,6 +517,7 @@ const RoomDetailPage: React.FC = () => {
               <Button
                 className={classnames(styles.swapModalBtn, styles.confirm)}
                 onClick={handleConfirmSwap}
+                loading={isLoading}
               >
                 确认发送
               </Button>

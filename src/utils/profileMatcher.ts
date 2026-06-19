@@ -52,7 +52,7 @@ export const generateProfile = (
   const canTakeBlame = answers[2] === 0 || answers[2] === 1;
   const likesInterrogation = answers[3] === 0;
   const readingSpeed = answers[4] === 0 ? 'fast' : answers[4] === 1 ? 'medium' : 'slow';
-  const prefersControl = answers[1] === 0 || answers[1] === 1;
+  const prefersControl = answers[1] === 0;
   const likesEmotional = answers[1] === 1 || answers[6] === 1;
 
   return {

@@ -327,3 +327,128 @@
   color: $color-warning;
   line-height: $line-height-loose;
 }
+
+.swapNoticeSection {
+  padding: 0 $page-padding;
+  margin-top: $spacing-xl;
+}
+
+.noticeTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-primary-light;
+  margin-bottom: $spacing-md;
+  display: block;
+}
+
+.swapNoticeCard {
+  background: $gradient-card;
+  border: 1rpx solid $color-border;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.swapNoticeText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.pendingBadge {
+  background: rgba(251, 191, 36, 0.2);
+  color: $color-warning;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.impactMini {
+  margin-top: $spacing-sm;
+}
+
+.impactMiniText {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+}
+
+.swapResponseBtns {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.responseBtn {
+  @include button-reset;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  height: 60rpx;
+  min-width: 100rpx;
+}
+
+.rejectBtn {
+  background: $color-bg-card-light;
+  color: $color-text-secondary;
+  border: 1rpx solid $color-border;
+}
+
+.acceptBtn {
+  background: linear-gradient(135deg, $color-success 0%, #10B981 100%);
+  color: $color-text-white;
+}
+
+.impactNeutral {
+  color: $color-text-secondary;
+}
+
+.swapDiffBadge {
+  display: inline-block;
+  margin-top: $spacing-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-button;
+  font-size: 22rpx;
+  font-weight: $font-weight-bold;
+  background: rgba(148, 163, 184, 0.2);
+  color: $color-text-secondary;
+}
+
+.playingHint {
+  @include flex-center;
+  background: linear-gradient(135deg, $color-type-icebreaker 0%, #F59E0B 100%);
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+}
+
+.swapHistoryCard {
+  background: $color-bg-card-light;
+  border-radius: $radius-md;
+  padding: $spacing-md $spacing-lg;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.historyAccept {
+  color: $color-success;
+  font-weight: $font-weight-medium;
+}
+
+.historyReject {
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}

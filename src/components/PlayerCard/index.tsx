@@ -10,6 +10,7 @@ interface PlayerCardProps {
   showRole?: boolean;
   showPrefs?: boolean;
   isSwapTarget?: boolean;
+  hasPendingSwap?: boolean;
   onClick?: () => void;
   className?: string;
 }
@@ -19,6 +20,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   showRole = true,
   showPrefs = false,
   isSwapTarget = false,
+  hasPendingSwap = false,
   onClick,
   className
 }) => {
@@ -41,10 +43,12 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
       className={classnames(
         styles.card,
         isSwapTarget && styles.swapTarget,
-        onClick && styles.clickable,
+        hasPendingSwap && styles.hasPending,
+        onClick && !hasPendingSwap && styles.clickable,
+        hasPendingSwap && styles.disabled,
         className
       )}
-      onClick={onClick}
+      onClick={!hasPendingSwap ? onClick : undefined}
     >
       <View className={styles.header}>
         <Image
@@ -84,7 +88,12 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         </View>
       )}
 
-      {isSwapTarget && (
+      {hasPendingSwap && (
+        <View className={styles.pendingSwapIndicator}>
+          <Text className={styles.pendingSwapText}>⏳ 换角请求处理中</Text>
+        </View>
+      )}
+      {isSwapTarget && !hasPendingSwap && (
         <View className={styles.swapIndicator}>
           <Text className={styles.swapText}>点击发起换角</Text>
         </View>
