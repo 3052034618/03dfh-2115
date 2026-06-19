@@ -220,3 +220,67 @@
   font-size: $font-size-xs;
   color: $color-primary-light;
 }
+
+.userSwitchSection {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-xl;
+}
+
+.userSwitchGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
+}
+
+.userSwitchCard {
+  background: $gradient-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md $spacing-sm;
+  border: 2rpx solid $color-border;
+  text-align: center;
+  position: relative;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+
+  &.userActive {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3rpx rgba(99, 102, 241, 0.3);
+  }
+}
+
+.userSwitchAvatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-round;
+  margin: 0 auto $spacing-xs;
+  border: 2rpx solid $color-border;
+}
+
+.userSwitchName {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: 4rpx;
+}
+
+.userSwitchRole {
+  font-size: 18rpx;
+  color: $color-success;
+  margin-top: 4rpx;
+}
+
+.userActiveBadge {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  background: $color-primary;
+  color: $color-text-white;
+  font-size: 16rpx;
+  padding: 2rpx 8rpx;
+  border-radius: $radius-sm;
+}

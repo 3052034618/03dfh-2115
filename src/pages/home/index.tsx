@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, Button, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
+import classnames from 'classnames';
 import { useAppStore } from '@/store/useAppStore';
 import TypeTag from '@/components/TypeTag';
 import { getTypeInfo } from '@/data/playerTypes';
 import { Player } from '@/types';
 import styles from './index.module.scss';
 
+const mockUsers: Player[] = [
+  { id: '1', name: '小明', avatar: 'https://picsum.photos/id/64/200/200', profile: null, role: null, isHost: false },
+  { id: '2', name: '小红', avatar: 'https://picsum.photos/id/91/200/200', profile: null, role: null, isHost: false },
+  { id: '3', name: '小刚', avatar: 'https://picsum.photos/id/177/200/200', profile: null, role: null, isHost: false },
+  { id: '4', name: '小丽', avatar: 'https://picsum.photos/id/338/200/200', profile: null, role: null, isHost: false },
+];
+
 const HomePage: React.FC = () => {
-  const { currentUser, setCurrentUser, currentRoom } = useAppStore();
+  const { currentUser, setCurrentUser, currentRoom, switchUser } = useAppStore();
   const [historyRecords] = useState([
     { script: '窗边的女人', date: '2026-06-15', role: '侦探', players: 6 },
     { script: '年轮', date: '2026-06-10', role: '凶手', players: 5 }
@@ -16,16 +24,8 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser) {
-      const mockUser: Player = {
-        id: 'user_' + Date.now(),
-        name: '玩家' + Math.floor(Math.random() * 1000),
-        avatar: 'https://picsum.photos/id/' + (64 + Math.floor(Math.random() * 10)) + '/200/200',
-        profile: null,
-        role: null,
-        isHost: false
-      };
-      setCurrentUser(mockUser);
-      console.log('[Home] 已初始化用户:', mockUser.name);
+      setCurrentUser(mockUsers[0]);
+      console.log('[Home] 已初始化默认用户:', mockUsers[0].name);
     }
   }, [currentUser, setCurrentUser]);
 
@@ -172,6 +172,39 @@ const HomePage: React.FC = () => {
             <Text className={styles.actionTitle}>偏好设置</Text>
             <Text className={styles.actionDesc}>公开信息</Text>
           </View>
+        </View>
+      </View>
+
+      <View className={styles.userSwitchSection}>
+        <Text className={styles.sectionTitle}>👥 切换用户（测试用）</Text>
+        <View className={styles.userSwitchGrid}>
+          {mockUsers.map((user) => {
+            const isActive = currentUser?.id === user.id;
+            const inRoom = currentRoom?.players.some(p => p.id === user.id);
+            const playerInRoom = inRoom ? currentRoom!.players.find(p => p.id === user.id) : null;
+            return (
+              <View
+                key={user.id}
+                className={classnames(styles.userSwitchCard, isActive && styles.userActive)}
+                onClick={() => switchUser(user.id)}
+              >
+                <Image className={styles.userSwitchAvatar} src={user.avatar} mode="aspectFill" />
+                <Text className={styles.userSwitchName}>{user.name}</Text>
+                {inRoom && playerInRoom && (
+                  <View className={styles.userSwitchRole}>
+                    <Text style={{ fontSize: '20rpx' }}>
+                      {playerInRoom.role ? `🎭 ${playerInRoom.role}` : '⏳ 等待中'}
+                    </Text>
+                  </View>
+                )}
+                {isActive && (
+                  <View className={styles.userActiveBadge}>
+                    <Text>当前</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
       </View>
 

@@ -56,7 +56,10 @@ const RoomDetailPage: React.FC = () => {
   }, [currentRoom?.id, addPlayerToRoom, currentRoom?.players.length, currentRoom?.roleCount, currentRoom]);
 
   useEffect(() => {
-    if (currentRoom?.status === 'matched' && currentRoom.assignedRoles) {
+    if (!currentRoom || !currentRoom.assignedRoles) return;
+    if (currentRoom.status !== 'matched' && currentRoom.status !== 'playing') return;
+
+    const computeMatch = () => {
       const result = assignRoles(currentRoom.players, currentRoom.roleCount);
       result.suggestions = result.suggestions.map(sug => {
         const player = currentRoom.players.find(p => p.id === sug.playerId);
@@ -65,20 +68,19 @@ const RoomDetailPage: React.FC = () => {
         }
         return sug;
       });
-      setMatchResult(result);
-      console.log('[RoomDetail] 分角结果已刷新，角色数:', result.suggestions.length);
-    } else if (currentRoom?.status === 'playing' && currentRoom.assignedRoles && !matchResult) {
-      const result = assignRoles(currentRoom.players, currentRoom.roleCount);
-      result.suggestions = result.suggestions.map(sug => {
-        const player = currentRoom.players.find(p => p.id === sug.playerId);
-        if (player?.role) {
-          return { ...sug, role: player.role };
-        }
-        return sug;
-      });
-      setMatchResult(result);
-    }
-  }, [currentRoom?.status, currentRoom?.assignedRoles, currentRoom?.players, currentRoom, matchResult]);
+      return result;
+    };
+
+    setMatchResult(prev => {
+      const newResult = computeMatch();
+      if (!prev) return newResult;
+      const prevJson = JSON.stringify(prev.suggestions.map(s => ({ id: s.playerId, role: s.role })));
+      const newJson = JSON.stringify(newResult.suggestions.map(s => ({ id: s.playerId, role: s.role })));
+      if (prevJson === newJson) return prev;
+      console.log('[RoomDetail] 分角结果已更新');
+      return newResult;
+    });
+  }, [currentRoom?.id, currentRoom?.status, currentRoom?.assignedRoles, currentRoom?.players]);
 
   const pendingSwaps = useMemo(() => {
     if (!currentRoom || !currentUser) return { sent: [], received: [] as SwapRequest[] };
@@ -88,6 +90,20 @@ const RoomDetailPage: React.FC = () => {
       received: allPending.filter(r => r.toPlayerId === currentUser.id)
     };
   }, [currentRoom, currentUser]);
+
+  const swapHistory = useMemo(() => {
+    if (!currentRoom) return [] as SwapRequest[];
+    return [...currentRoom.swapRequests]
+      .filter(r => r.status !== 'pending')
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }, [currentRoom]);
+
+  const formatTime = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
 
   if (!currentRoom || !currentUser) {
     return <View className={styles.page} />;
@@ -400,27 +416,39 @@ const RoomDetailPage: React.FC = () => {
           </View>
         )}
 
-        {allMatched && currentRoom.swapRequests.filter(r => r.status !== 'pending').length > 0 && (
+        {allMatched && swapHistory.length > 0 && (
           <View className={styles.section}>
-            <Text className={styles.sectionTitle}>🔄 换角记录</Text>
-            {currentRoom.swapRequests
-              .filter(r => r.status !== 'pending')
-              .map(req => {
-                const from = getPlayerById(req.fromPlayerId);
-                const to = getPlayerById(req.toPlayerId);
-                return (
-                  <View key={req.id} className={styles.swapHistoryCard}>
-                    <Text>
-                      {from?.name} ⇄ {to?.name}：{req.fromRole} ⇄ {req.toRole}
+            <Text className={styles.sectionTitle}>🔄 换角记录（共 {swapHistory.length} 条）</Text>
+            {swapHistory.map(req => {
+              const from = getPlayerById(req.fromPlayerId);
+              const to = getPlayerById(req.toPlayerId);
+              const isAccepted = req.status === 'accepted';
+
+              let roleDisplay = '';
+              if (isAccepted) {
+                roleDisplay = `${from?.name}: ${req.fromRole} → ${req.toRole} | ${to?.name}: ${req.toRole} → ${req.fromRole}`;
+              } else {
+                roleDisplay = `${from?.name} 想与 ${to?.name} 交换：${req.fromRole} ⇄ ${req.toRole}`;
+              }
+
+              return (
+                <View key={req.id} className={styles.swapHistoryCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: '26rpx', color: '#E2E8F0', lineHeight: 1.5, display: 'block' }}>
+                      {roleDisplay}
                     </Text>
-                    <Text className={classnames(
-                      req.status === 'accepted' ? styles.historyAccept : styles.historyReject
-                    )}>
-                      {req.status === 'accepted' ? '✅ 已完成' : '❌ 已拒绝'}
+                    <Text style={{ fontSize: '22rpx', color: '#64748B', marginTop: '8rpx', display: 'block' }}>
+                      {formatTime(req.createdAt)}
                     </Text>
                   </View>
-                );
-              })}
+                  <Text className={classnames(
+                    isAccepted ? styles.historyAccept : styles.historyReject
+                  )}>
+                    {isAccepted ? '✅ 已完成' : '❌ 已拒绝'}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>

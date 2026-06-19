@@ -26,7 +26,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleTogglePref = (key: keyof typeof currentUser.profile.publicPrefs) => {
+  const handleTogglePref = (key: keyof NonNullable<NonNullable<typeof currentUser>['profile']>['publicPrefs']) => {
     if (!currentUser?.profile) return;
     
     const newPrefs = { ...currentUser.profile.publicPrefs };

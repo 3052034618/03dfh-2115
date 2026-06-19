@@ -19,6 +19,7 @@ interface AppState {
   requestSwap: (toPlayerId: string, fromRole: string, toRole: string, impact: SwapImpact) => SwapRequest | null;
   respondToSwap: (requestId: string, accepted: boolean) => void;
   hasPendingSwapBetween: (fromPlayerId: string, toPlayerId: string) => boolean;
+  switchUser: (userId: string) => void;
 }
 
 const mockUsers: Player[] = [
@@ -53,8 +54,43 @@ export const useAppStore = create<AppState>((set, get) => ({
   rooms: mockRooms,
 
   setCurrentUser: (user: Player) => {
-    set({ currentUser: user });
-    console.log('[Auth] 用户已设置:', user.name);
+    const state = get();
+    let syncedUser = { ...user };
+
+    if (state.currentRoom) {
+      const playerInRoom = state.currentRoom.players.find(p => p.id === user.id);
+      if (playerInRoom) {
+        syncedUser = { ...syncedUser, role: playerInRoom.role, isHost: playerInRoom.isHost };
+        console.log('[Auth] 同步房间内用户角色:', syncedUser.role);
+      }
+    }
+
+    set({ currentUser: syncedUser });
+    console.log('[Auth] 用户已设置:', syncedUser.name, '角色:', syncedUser.role);
+  },
+
+  switchUser: (userId: string) => {
+    const state = get();
+    const targetUser = mockUsers.find(u => u.id === userId);
+    if (!targetUser) {
+      Taro.showToast({ title: '用户不存在', icon: 'none' });
+      return;
+    }
+
+    let syncedUser = { ...targetUser };
+
+    if (state.currentRoom) {
+      const playerInRoom = state.currentRoom.players.find(p => p.id === userId);
+      if (playerInRoom) {
+        syncedUser = { ...syncedUser, role: playerInRoom.role, isHost: playerInRoom.isHost };
+      } else {
+        syncedUser = { ...syncedUser, role: null, isHost: false };
+      }
+    }
+
+    set({ currentUser: syncedUser });
+    Taro.showToast({ title: `已切换为 ${syncedUser.name}`, icon: 'success' });
+    console.log('[Auth] 已切换用户:', syncedUser.name, '角色:', syncedUser.role);
   },
 
   setCurrentRoom: (room: Room | null) => {
@@ -236,7 +272,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       role: roles[p.id] || null
     }));
 
-    const updatedRoom = {
+    const updatedRoom: Room = {
       ...state.currentRoom,
       players: updatedPlayers,
       assignedRoles: roles,
@@ -327,7 +363,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
-    const updatedRoom = {
+    const updatedRoom: Room = {
       ...state.currentRoom,
       players: updatedPlayers,
       assignedRoles: updatedRoles,
