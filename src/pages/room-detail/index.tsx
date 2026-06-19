@@ -57,8 +57,18 @@ const RoomDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (currentRoom?.status === 'matched' && currentRoom.assignedRoles) {
-      const playersWithLatestRoles = currentRoom.players;
-      const result = assignRoles(playersWithLatestRoles, currentRoom.roleCount);
+      const result = assignRoles(currentRoom.players, currentRoom.roleCount);
+      result.suggestions = result.suggestions.map(sug => {
+        const player = currentRoom.players.find(p => p.id === sug.playerId);
+        if (player?.role) {
+          return { ...sug, role: player.role };
+        }
+        return sug;
+      });
+      setMatchResult(result);
+      console.log('[RoomDetail] 分角结果已刷新，角色数:', result.suggestions.length);
+    } else if (currentRoom?.status === 'playing' && currentRoom.assignedRoles && !matchResult) {
+      const result = assignRoles(currentRoom.players, currentRoom.roleCount);
       result.suggestions = result.suggestions.map(sug => {
         const player = currentRoom.players.find(p => p.id === sug.playerId);
         if (player?.role) {
@@ -68,7 +78,7 @@ const RoomDetailPage: React.FC = () => {
       });
       setMatchResult(result);
     }
-  }, [currentRoom?.status, currentRoom?.assignedRoles, currentRoom?.players, currentRoom]);
+  }, [currentRoom?.status, currentRoom?.assignedRoles, currentRoom?.players, currentRoom, matchResult]);
 
   const pendingSwaps = useMemo(() => {
     if (!currentRoom || !currentUser) return { sent: [], received: [] as SwapRequest[] };
@@ -148,7 +158,14 @@ const RoomDetailPage: React.FC = () => {
   };
 
   const handleInitiateSwap = (targetPlayer: Player) => {
-    if (!currentUser.role || !targetPlayer.role) return;
+    console.log('[RoomDetail] 点击发起换角，target:', targetPlayer.name, 'target.role:', targetPlayer.role, 'currentUser.role:', currentUser.role);
+    
+    if (!currentUser.role || !targetPlayer.role) {
+      console.log('[RoomDetail] 角色为空，取消操作');
+      Taro.showToast({ title: '角色信息不完整', icon: 'none' });
+      return;
+    }
+    
     if (hasPendingSwapBetween(currentUser.id, targetPlayer.id)) {
       Taro.showToast({ title: '与该玩家已有待处理请求', icon: 'none' });
       return;
@@ -163,6 +180,8 @@ const RoomDetailPage: React.FC = () => {
         currentUser.role,
         targetPlayer.role
       );
+      
+      console.log('[RoomDetail] 换角影响计算完成:', impact);
 
       setSwapTarget(targetPlayer);
       setSwapImpact(impact);

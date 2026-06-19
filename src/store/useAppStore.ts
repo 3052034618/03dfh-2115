@@ -107,6 +107,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   createRoom: (scriptName: string, roleCount: number): Room => {
     const state = get();
     const currentUser = state.currentUser || mockUsers[0];
+    const userWithHost = { ...currentUser, isHost: true, role: null };
     
     const newRoom: Room = {
       id: `room_${Date.now()}`,
@@ -114,17 +115,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       hostId: currentUser.id,
       scriptName,
       roleCount,
-      players: [{ ...currentUser, isHost: true }],
+      players: [userWithHost],
       status: 'waiting',
       assignedRoles: null,
       swapRequests: [],
       createdAt: Date.now()
     };
 
-    set((state) => ({
+    set({
       rooms: [...state.rooms, newRoom],
-      currentRoom: newRoom
-    }));
+      currentRoom: newRoom,
+      currentUser: userWithHost
+    });
 
     console.log('[Room] 房间已创建:', newRoom.code);
     return newRoom;
@@ -145,13 +147,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const currentUser = state.currentUser || mockUsers[1];
-    const updatedPlayers = [...room.players, { ...currentUser, isHost: false }];
+    const userWithRole = { ...currentUser, isHost: false, role: null };
+    const updatedPlayers = [...room.players, userWithRole];
     const updatedRoom = { ...room, players: updatedPlayers };
 
-    set((state) => ({
+    set({
       rooms: state.rooms.map(r => r.id === room.id ? updatedRoom : r),
-      currentRoom: updatedRoom
-    }));
+      currentRoom: updatedRoom,
+      currentUser: userWithRole
+    });
 
     console.log('[Room] 已加入房间:', room.code);
     return updatedRoom;
@@ -225,7 +229,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setAssignedRoles: (roles: Record<string, string>) => {
     const state = get();
-    if (!state.currentRoom) return;
+    if (!state.currentRoom || !state.currentUser) return;
 
     const updatedPlayers = state.currentRoom.players.map(p => ({
       ...p,
@@ -239,12 +243,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       status: 'matched'
     };
 
-    set((state) => ({
-      rooms: state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r),
-      currentRoom: updatedRoom
-    }));
+    const currentUserInRoom = updatedPlayers.find(p => p.id === state.currentUser!.id);
+    const updatedCurrentUser = currentUserInRoom
+      ? { ...state.currentUser, role: currentUserInRoom.role }
+      : state.currentUser;
 
-    console.log('[Room] 角色已分配:', roles);
+    const updatedRooms = state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r);
+
+    set({
+      rooms: updatedRooms,
+      currentRoom: updatedRoom,
+      currentUser: updatedCurrentUser
+    });
+
+    console.log('[Room] 角色已分配，房主同步:', updatedCurrentUser.role);
   },
 
   requestSwap: (toPlayerId: string, fromRole: string, toRole: string, impact: SwapImpact): SwapRequest | null => {
@@ -275,10 +287,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       swapRequests: [...state.currentRoom.swapRequests, request]
     };
 
-    set((state) => ({
-      rooms: state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r),
-      currentRoom: updatedRoom
-    }));
+    const currentUserInRoom = updatedRoom.players.find(p => p.id === fromPlayerId);
+    const updatedCurrentUser = currentUserInRoom
+      ? { ...state.currentUser, role: currentUserInRoom.role }
+      : state.currentUser;
+
+    const updatedRooms = state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r);
+
+    set({
+      rooms: updatedRooms,
+      currentRoom: updatedRoom,
+      currentUser: updatedCurrentUser
+    });
 
     console.log('[Swap] 换角请求已发送:', request.id);
     return request;
@@ -286,53 +306,49 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   respondToSwap: (requestId: string, accepted: boolean) => {
     const state = get();
-    if (!state.currentRoom) return;
+    if (!state.currentRoom || !state.currentUser) return;
 
     const request = state.currentRoom.swapRequests.find(r => r.id === requestId);
     if (!request) return;
 
+    let updatedPlayers = state.currentRoom.players;
+    let updatedRoles = { ...state.currentRoom.assignedRoles };
+
     if (accepted) {
-      const updatedPlayers = state.currentRoom.players.map(p => {
+      updatedPlayers = state.currentRoom.players.map(p => {
         if (p.id === request.fromPlayerId) return { ...p, role: request.toRole };
         if (p.id === request.toPlayerId) return { ...p, role: request.fromRole };
         return p;
       });
 
-      const updatedRoles = { ...state.currentRoom.assignedRoles };
       if (updatedRoles) {
         updatedRoles[request.fromPlayerId] = request.toRole;
         updatedRoles[request.toPlayerId] = request.fromRole;
       }
-
-      const updatedRoom = {
-        ...state.currentRoom,
-        players: updatedPlayers,
-        assignedRoles: updatedRoles,
-        swapRequests: state.currentRoom.swapRequests.map(r =>
-          r.id === requestId ? { ...r, status: 'accepted' as const } : r
-        )
-      };
-
-      set((state) => ({
-        rooms: state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r),
-        currentRoom: updatedRoom
-      }));
-
-      console.log('[Swap] 换角已接受');
-    } else {
-      const updatedRoom = {
-        ...state.currentRoom,
-        swapRequests: state.currentRoom.swapRequests.map(r =>
-          r.id === requestId ? { ...r, status: 'rejected' as const } : r
-        )
-      };
-
-      set((state) => ({
-        rooms: state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r),
-        currentRoom: updatedRoom
-      }));
-
-      console.log('[Swap] 换角已拒绝');
     }
+
+    const updatedRoom = {
+      ...state.currentRoom,
+      players: updatedPlayers,
+      assignedRoles: updatedRoles,
+      swapRequests: state.currentRoom.swapRequests.map(r =>
+        r.id === requestId ? { ...r, status: accepted ? 'accepted' as const : 'rejected' as const } : r
+      )
+    };
+
+    const currentUserInRoom = updatedPlayers.find(p => p.id === state.currentUser!.id);
+    const updatedCurrentUser = currentUserInRoom
+      ? { ...state.currentUser, role: currentUserInRoom.role }
+      : state.currentUser;
+
+    const updatedRooms = state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r);
+
+    set({
+      rooms: updatedRooms,
+      currentRoom: updatedRoom,
+      currentUser: updatedCurrentUser
+    });
+
+    console.log('[Swap] 换角处理完成:', accepted ? '已接受' : '已拒绝', '用户角色同步:', updatedCurrentUser.role);
   }
 }));
