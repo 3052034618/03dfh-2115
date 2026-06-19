@@ -71,6 +71,7 @@ export interface SwapRequest {
   impact: SwapImpact;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: number;
+  processedAt?: number;
 }
 
 export interface RoleSuggestion {

@@ -23,10 +23,42 @@ interface AppState {
 }
 
 const mockUsers: Player[] = [
-  { id: '1', name: '小明', avatar: 'https://picsum.photos/id/64/200/200', profile: null, role: null, isHost: false },
-  { id: '2', name: '小红', avatar: 'https://picsum.photos/id/91/200/200', profile: null, role: null, isHost: false },
-  { id: '3', name: '小刚', avatar: 'https://picsum.photos/id/177/200/200', profile: null, role: null, isHost: false },
-  { id: '4', name: '小丽', avatar: 'https://picsum.photos/id/338/200/200', profile: null, role: null, isHost: false },
+  {
+    id: '1', name: '小明', avatar: 'https://picsum.photos/id/64/200/200',
+    profile: {
+      type: 'detective', name: '控场侦探型',
+      scores: { detective: 22, emotional: 8, observer: 14, icebreaker: 10 },
+      publicPrefs: { canTakeBlame: true, likesInterrogation: true, readingSpeed: 'fast', prefersControl: true, likesEmotional: false }
+    },
+    role: null, isHost: false
+  },
+  {
+    id: '2', name: '小红', avatar: 'https://picsum.photos/id/91/200/200',
+    profile: {
+      type: 'emotional', name: '情感爆发型',
+      scores: { detective: 8, emotional: 24, observer: 10, icebreaker: 12 },
+      publicPrefs: { canTakeBlame: true, likesInterrogation: false, readingSpeed: 'slow', prefersControl: false, likesEmotional: true }
+    },
+    role: null, isHost: false
+  },
+  {
+    id: '3', name: '小刚', avatar: 'https://picsum.photos/id/177/200/200',
+    profile: {
+      type: 'observer', name: '暗线观察型',
+      scores: { detective: 12, emotional: 10, observer: 22, icebreaker: 8 },
+      publicPrefs: { canTakeBlame: true, likesInterrogation: false, readingSpeed: 'fast', prefersControl: false, likesEmotional: false }
+    },
+    role: null, isHost: false
+  },
+  {
+    id: '4', name: '小丽', avatar: 'https://picsum.photos/id/338/200/200',
+    profile: {
+      type: 'icebreaker', name: '欢乐破冰型',
+      scores: { detective: 10, emotional: 12, observer: 8, icebreaker: 22 },
+      publicPrefs: { canTakeBlame: false, likesInterrogation: true, readingSpeed: 'medium', prefersControl: false, likesEmotional: false }
+    },
+    role: null, isHost: false
+  },
 ];
 
 const generateRoomCode = (): string => {
@@ -224,9 +256,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       players: [...state.currentRoom.players, player]
     };
 
+    const isCurrentUser = state.currentUser?.id === player.id;
+    const updatedCurrentUser = isCurrentUser
+      ? { ...player }
+      : state.currentUser;
+
     set((state) => ({
       rooms: state.rooms.map(r => r.id === updatedRoom.id ? updatedRoom : r),
-      currentRoom: updatedRoom
+      currentRoom: updatedRoom,
+      currentUser: updatedCurrentUser
     }));
 
     console.log('[Room] 玩家已加入:', player.name);
@@ -363,12 +401,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     }
 
+    const now = Date.now();
     const updatedRoom: Room = {
       ...state.currentRoom,
       players: updatedPlayers,
       assignedRoles: updatedRoles,
       swapRequests: state.currentRoom.swapRequests.map(r =>
-        r.id === requestId ? { ...r, status: accepted ? 'accepted' as const : 'rejected' as const } : r
+        r.id === requestId
+          ? { ...r, status: accepted ? 'accepted' as const : 'rejected' as const, processedAt: now }
+          : r
       )
     };
 

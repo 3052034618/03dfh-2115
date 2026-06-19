@@ -41,9 +41,33 @@ const RoomDetailPage: React.FC = () => {
   useEffect(() => {
     if (currentRoom && currentRoom.players.length < currentRoom.roleCount) {
       const mockPlayers: Player[] = [
-        { id: 'mock_1', name: '玩家A', avatar: 'https://picsum.photos/id/91/200/200', profile: { type: 'emotional', name: '情感爆发型', scores: { detective: 8, emotional: 20, observer: 12, icebreaker: 10 }, publicPrefs: { canTakeBlame: true, likesInterrogation: false, readingSpeed: 'slow', prefersControl: false, likesEmotional: true } }, role: null, isHost: false },
-        { id: 'mock_2', name: '玩家B', avatar: 'https://picsum.photos/id/177/200/200', profile: { type: 'observer', name: '暗线观察型', scores: { detective: 12, emotional: 8, observer: 22, icebreaker: 8 }, publicPrefs: { canTakeBlame: true, likesInterrogation: false, readingSpeed: 'fast', prefersControl: false, likesEmotional: false } }, role: null, isHost: false },
-        { id: 'mock_3', name: '玩家C', avatar: 'https://picsum.photos/id/338/200/200', profile: { type: 'icebreaker', name: '欢乐破冰型', scores: { detective: 10, emotional: 12, observer: 8, icebreaker: 20 }, publicPrefs: { canTakeBlame: false, likesInterrogation: true, readingSpeed: 'medium', prefersControl: false, likesEmotional: false } }, role: null, isHost: false },
+        {
+          id: '2', name: '小红', avatar: 'https://picsum.photos/id/91/200/200',
+          profile: {
+            type: 'emotional', name: '情感爆发型',
+            scores: { detective: 8, emotional: 24, observer: 10, icebreaker: 12 },
+            publicPrefs: { canTakeBlame: true, likesInterrogation: false, readingSpeed: 'slow', prefersControl: false, likesEmotional: true }
+          },
+          role: null, isHost: false
+        },
+        {
+          id: '3', name: '小刚', avatar: 'https://picsum.photos/id/177/200/200',
+          profile: {
+            type: 'observer', name: '暗线观察型',
+            scores: { detective: 12, emotional: 10, observer: 22, icebreaker: 8 },
+            publicPrefs: { canTakeBlame: true, likesInterrogation: false, readingSpeed: 'fast', prefersControl: false, likesEmotional: false }
+          },
+          role: null, isHost: false
+        },
+        {
+          id: '4', name: '小丽', avatar: 'https://picsum.photos/id/338/200/200',
+          profile: {
+            type: 'icebreaker', name: '欢乐破冰型',
+            scores: { detective: 10, emotional: 12, observer: 8, icebreaker: 22 },
+            publicPrefs: { canTakeBlame: false, likesInterrogation: true, readingSpeed: 'medium', prefersControl: false, likesEmotional: false }
+          },
+          role: null, isHost: false
+        },
       ];
 
       const playersToAdd = currentRoom.roleCount - currentRoom.players.length;
@@ -95,18 +119,58 @@ const RoomDetailPage: React.FC = () => {
     if (!currentRoom) return [] as SwapRequest[];
     return [...currentRoom.swapRequests]
       .filter(r => r.status !== 'pending')
-      .sort((a, b) => b.createdAt - a.createdAt);
+      .sort((a, b) => (b.processedAt || b.createdAt) - (a.processedAt || a.createdAt));
   }, [currentRoom]);
 
-  const formatTime = (timestamp: number): string => {
+  const formatTime = (timestamp?: number): string => {
+    if (!timestamp) return '--:--';
     const date = new Date(timestamp);
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
   };
 
+  const isPlayerInRoom = currentRoom && currentUser
+    ? currentRoom.players.some(p => p.id === currentUser.id)
+    : false;
+
   if (!currentRoom || !currentUser) {
     return <View className={styles.page} />;
+  }
+
+  if (!isPlayerInRoom) {
+    return (
+      <ScrollView className={styles.page} scrollY>
+        <View className={styles.notInRoomContainer}>
+          <Text className={styles.notInRoomIcon}>🚪</Text>
+          <Text className={styles.notInRoomTitle}>你还没加入这个房间</Text>
+          <Text className={styles.notInRoomDesc}>
+            房间「{currentRoom.scriptName}」已有 {currentRoom.players.length}/{currentRoom.roleCount} 位玩家
+          </Text>
+          <View className={styles.notInRoomActions}>
+            <Button
+              className={classnames(styles.notInRoomBtn, styles.primaryBtn)}
+              onClick={() => {
+                if (currentRoom.players.length >= currentRoom.roleCount) {
+                  Taro.showToast({ title: '房间已满', icon: 'none' });
+                  return;
+                }
+                addPlayerToRoom(currentUser);
+                Taro.showToast({ title: '已加入房间', icon: 'success' });
+              }}
+            >
+              加入房间
+            </Button>
+            <Button
+              className={classnames(styles.notInRoomBtn, styles.secondaryBtn)}
+              onClick={() => Taro.navigateBack()}
+            >
+              返回
+            </Button>
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   const handleCopyCode = () => {
@@ -263,7 +327,8 @@ const RoomDetailPage: React.FC = () => {
     return styles.impactNeutral;
   };
 
-  const isHost = currentRoom.players.find(p => p.id === currentUser.id)?.isHost || false;
+  const playerInRoom = currentRoom.players.find(p => p.id === currentUser.id);
+  const isHost = playerInRoom?.isHost || false;
   const canMatch = isHost && currentRoom.status === 'waiting' && currentRoom.players.length >= 2;
   const allMatched = currentRoom.status === 'matched' || currentRoom.status === 'playing';
 
@@ -438,7 +503,7 @@ const RoomDetailPage: React.FC = () => {
                       {roleDisplay}
                     </Text>
                     <Text style={{ fontSize: '22rpx', color: '#64748B', marginTop: '8rpx', display: 'block' }}>
-                      {formatTime(req.createdAt)}
+                      处理于 {formatTime(req.processedAt)}
                     </Text>
                   </View>
                   <Text className={classnames(

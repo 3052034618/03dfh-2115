@@ -452,3 +452,65 @@
   color: $color-error;
   font-weight: $font-weight-medium;
 }
+
+.notInRoomContainer {
+  padding: 120rpx $page-padding;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+}
+
+.notInRoomIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-lg;
+}
+
+.notInRoomTitle {
+  display: block;
+  font-size: 40rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.notInRoomDesc {
+  display: block;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xxl;
+  line-height: $line-height-loose;
+}
+
+.notInRoomActions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  width: 100%;
+  max-width: 500rpx;
+}
+
+.notInRoomBtn {
+  @include button-reset;
+  width: 100%;
+  height: 96rpx;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.primaryBtn {
+  background: linear-gradient(135deg, $color-primary 0%, #8B5CF6 100%);
+  color: $color-text-white;
+}
+
+.secondaryBtn {
+  background: $color-bg-card-light;
+  color: $color-text-secondary;
+  border: 1rpx solid $color-border;
+}
